@@ -1,13 +1,14 @@
 'use strict';
-const Square = (props) => {
 
+const Square = (props) => {
   return <td className="square" column ={props.column} row={props.row} title="0,0,0"></td>;
 }
 const Circle = (props) => {
-  return <td className="circle" column={props.column} row={props.row}  title="0,0,0" onClick = {(evt) => handelClick(evt, props.column, props.row)}></td>;
+  const [clicked, setClicked] = React.useState(false);
+  return <td className="circle" column={props.column} row={props.row}  title="0,0,0" onClick = {(evt) => handelClick(evt, props.column, props.row, props.width, props.height)}></td>;
 }
 var clickNumber= 0;
-const handelClick = (evt, column, row)=>{
+const handelClick = (evt, column, row, width, height)=>{
   var rgb = [];
   if(clickNumber == 0){
     evt.target.style.backgroundColor = "rgb(255, 0, 0)";
@@ -28,12 +29,23 @@ const handelClick = (evt, column, row)=>{
     alert(' You finished your 3 clicks, now you can drag the shining tiles on the sources to have more colors!!')
   }
   clickNumber ++;
-  generateTilesColors(column, row, rgb);
+  generateTilesColors(column, row, rgb, width, height);
   UpdateMoveLefts();
 
 };
-const generateTilesColors = (column , row)=>{
+const generateTilesColors = (column , row, rgb, width, height)=>{
    // add colors here for tiles
+   const col = String(column);;
+   var squares = document.querySelectorAll(".square[column='"+col+"']");
+   for (let i = 0; i < squares.length; ++i) {
+     var squareRgb =[];
+     var factor = (width + 1 - (i+1))/ (width + 1);
+     squareRgb[0]= rgb[0] * factor;
+     squareRgb[1]= rgb[1] * factor;
+     squareRgb[2]= rgb[2] * factor;
+     squares[i].style.backgroundColor = "rgb(" +squareRgb[0]+ ","+squareRgb[1]+","+squareRgb[2]+")";
+     squares[i].setAttribute('title',squareRgb.toString());
+  }
    
 }
 const UpdateMoveLefts = ()=>{
@@ -66,7 +78,7 @@ const TabletrCircle = (props) => {
   const list = [];
   list.push(<td key={0}></td>);
   for(let j = 0; j < props.width; j++){
-    list.push(<Circle key={j+1} column={j+1} row={props.row}/>);
+    list.push(<Circle key={j+1} column={j+1} row={props.row} width={props.width} height={props.height}/>);
   }
     list.push(<td key={-1}></td>);
   return (
@@ -77,11 +89,11 @@ const TabletrCircle = (props) => {
 }
 const TabletrSquare = (props) => {
   const list = [];
-  list.push(<Circle key={0} column={0} row={props.row} />);
+  list.push(<Circle key={0} column={0} row={props.row} width={props.width} height={props.height} />);
   for(let j = 0; j < props.width; j++){
     list.push(<Square key={j+1} column={j+1} row={props.row}/>);
   }
-  list.push(<Circle key={-1} column={-1} row={props.row} />);
+  list.push(<Circle key={-1} column={-1} row={props.row} width={props.width} height={props.height} />);
   return (
     <tr>
      {list}
@@ -90,11 +102,11 @@ const TabletrSquare = (props) => {
 }
 const Tablebody = (props) =>{
   const list = [];
-  list.push(<TabletrCircle key={0} width={props.width} row={0}/>)
+  list.push(<TabletrCircle key={0} width={props.width} height={props.height} row={0}/>)
   for(let i = 0; i < props.height; i++){
-      list.push(<TabletrSquare key={i+1} width={props.width} row={i+1} />)
+      list.push(<TabletrSquare key={i+1} width={props.width} height={props.height} row={i+1} />)
   }
-  list.push(<TabletrCircle key={-1} width={props.width} row={-1}/>)
+  list.push(<TabletrCircle key={-1} width={props.width} height={props.height} row={-1}/>)
   return (
     <tbody>
       {list}
