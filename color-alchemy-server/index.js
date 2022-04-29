@@ -1,7 +1,8 @@
 const express = require("express");
 
 const app = express();
-
+const router = express.Router();
+const path = require('path');
 const port = 9876;
 
 const getRandomInt = (min, max) => {
@@ -27,6 +28,11 @@ app.use((_req, res, next) => {
   next();
 });
 
+router.get('/', (_, res) => {
+  res.sendFile(path.join(__dirname+'/game.html'));
+  //__dirname : It will resolve to your project folder.
+});
+
 app.get("/init", (_, res) => {
   return res.json(getGameInfo());
 });
@@ -34,6 +40,10 @@ app.get("/init", (_, res) => {
 app.get("/init/user/:id", (req, res) => {
   return res.json(getGameInfo(req.params.id));
 });
+
+app.use("/static", express.static('./static/'));
+
+app.use('/', router);
 
 app.listen(port, () => {
   console.log(`Start color-alchemy-server at ${port}`);
