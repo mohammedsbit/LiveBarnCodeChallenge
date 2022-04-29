@@ -35,16 +35,33 @@ const handelClick = (evt, column, row, width, height)=>{
 };
 const generateTilesColors = (column , row, rgb, width, height)=>{
    // add colors here for tiles
-   const col = String(column);;
-   var squares = document.querySelectorAll(".square[column='"+col+"']");
+   if(column == 0 || column == -1){
+     var squares = document.querySelectorAll(".square[row='"+row+"']");
+   }
+   else{
+    var squares = document.querySelectorAll(".square[column='"+column+"']");
+   }
+
    for (let i = 0; i < squares.length; ++i) {
-     var squareRgb =[];
+     var squareActualRgb = [];
+     var squareRgb = [];
+     var resultRgb = [];
      var factor = (width + 1 - (i+1))/ (width + 1);
+     var r,g,b,f;
      squareRgb[0]= rgb[0] * factor;
      squareRgb[1]= rgb[1] * factor;
      squareRgb[2]= rgb[2] * factor;
-     squares[i].style.backgroundColor = "rgb(" +squareRgb[0]+ ","+squareRgb[1]+","+squareRgb[2]+")";
-     squares[i].setAttribute('title',squareRgb.toString());
+     squareActualRgb = squares[i].getAttribute('title').split(',');
+     r = squareActualRgb[0] + squareRgb[0];
+     g = squareActualRgb[1] + squareRgb[1];
+     b = squareActualRgb[2] + squareRgb[2];
+     f = 255 / Math.max(r, g, b, 255);
+     resultRgb[0]= r * f;
+     resultRgb[1]= g * f;
+     resultRgb[2]= g * f;
+     squares[i].style.backgroundColor = "rgb(" +resultRgb[0]+ ","+resultRgb[1]+","+resultRgb[2]+")";
+     squares[i].setAttribute('title',resultRgb.toString());
+     
   }
    
 }
@@ -58,7 +75,6 @@ const GameData = (props) => {
   const targetColor = props.targetcolor;
   if(targetColor){
      var targetColorArray = targetColor.split(",");
-     console.log(targetColorArray);
      var squareColor = {
        backgroundColor: "rgb(" +targetColorArray[0]+ ","+targetColorArray[1]+","+targetColorArray[2]+")"
      };
@@ -129,7 +145,6 @@ class Game extends React.Component {
     const url = "http://localhost:9876/init";
     const res = await fetch(url);
     const data = await res.json();
-    console.log(data);
     this.setState({ userid: data.userId, movesleft: data.maxMoves, targetcolor: data.target.toString(),
       width: data.width, height: data.height,});
   }
