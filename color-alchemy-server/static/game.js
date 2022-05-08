@@ -1,5 +1,7 @@
 'use strict';
 
+var globalTargetColor = [];
+var golbalHighlightedTile = null;
 const Square = (props) => {
   return <td className="square" column ={props.column} row={props.row} title="0,0,0"></td>;
 }
@@ -30,7 +32,7 @@ const handelClick = (evt, column, row, width, height)=>{
   }
   clickNumber ++;
   generateTilesColors(column, row, rgb, width, height);
-  UpdateMoveLefts();
+  UpdateMovesLeft();
 
 };
 const generateTilesColors = (column , row, rgb, width, height)=>{
@@ -56,38 +58,62 @@ const generateTilesColors = (column , row, rgb, width, height)=>{
      g = squareActualRgb[1] + squareRgb[1];
      b = squareActualRgb[2] + squareRgb[2];
      f = 255 / Math.max(r, g, b, 255);
-     resultRgb[0]= r * f;
-     resultRgb[1]= g * f;
-     resultRgb[2]= g * f;
+     resultRgb[0]= parseFloat(r * f).toFixed(2);
+     resultRgb[1]= parseFloat(g * f).toFixed(2);
+     resultRgb[2]= parseFloat(g * f).toFixed(2);
      squares[i].style.backgroundColor = "rgb(" +resultRgb[0]+ ","+resultRgb[1]+","+resultRgb[2]+")";
      squares[i].setAttribute('title',resultRgb.toString());
+     updateClosestColor(resultRgb[0], resultRgb[1], resultRgb[2], squares[i]);
      
   }
    
 }
-const UpdateMoveLefts = ()=>{
+const ClosestColor = (props)=>{
+  const targetColor = props.targetcolor.split(",");
+  var delta = (1/255)*(1/Math.sqrt(3))*(Math.sqrt(Math.pow(targetColor[0],2)+Math.pow(targetColor[1],2)+Math.pow(targetColor[2],2)));
+  delta = parseFloat(delta*100).toFixed(2);
+  return (
+  <p className="game-closest-color">Closest color: <span id='closest-color-tile' title="0,0,0" className="square"></span>
+  <span className="delta">Δ = <span id='closest-color-delta' delta = {delta}>{delta}</span>%</span></p>)
+
+}
+const updateClosestColor = (r, g, b, e)=>{
+  var newDelta = (1/255)*(1/Math.sqrt(3))*(Math.sqrt(Math.pow((globalTargetColor[0] - r),2)+Math.pow((globalTargetColor[1] - g),2)+Math.pow((globalTargetColor[2] - b),2)));
+  newDelta = parseFloat(newDelta*100).toFixed(2); 
+  var deltaElem = document.getElementById('closest-color-delta');
+  var tileElem = document.getElementById('closest-color-tile');
+  var oldDleta = deltaElem.getAttribute('delta');
+  if(newDelta < oldDleta){
+    console.log(' ya haramii new deltta = :' + newDelta);
+    deltaElem.setAttribute('delta', newDelta.toString());
+    deltaElem.innerText = newDelta.toString();
+    tileElem.style.backgroundColor = "rgb(" +r+ ","+g+","+b+")";
+    tileElem.setAttribute('title', r +',' + g + ',' +b);
+    if(golbalHighlightedTile !== null){
+      golbalHighlightedTile.classList.remove('highlighted-tile');
+    }
+    e.classList.add('highlighted-tile');
+    golbalHighlightedTile = e;
+  }
+}
+const MoveLefts = (props)=>{
   // update the number of the moves left for the user
-   
+  return <p  className="game-moves-left">Moves left: <span id="moves-left-component" movesleft={props.movesleft}>{props.movesleft}</span></p>;
+
 }
 
-const GameData = (props) => {
-  
-  const targetColor = props.targetcolor;
-  if(targetColor){
-     var targetColorArray = targetColor.split(",");
-     var squareColor = {
-       backgroundColor: "rgb(" +targetColorArray[0]+ ","+targetColorArray[1]+","+targetColorArray[2]+")"
-     };
+const UpdateMovesLeft = () => {
+  var e = document.getElementById('moves-left-component');
+  var moves = e.getAttribute('movesleft');
+  if(parseInt(moves) > 0){
+    moves = parseInt(moves) - 1;
+    e.setAttribute('movesleft', moves.toString());
+    e.innerText = moves.toString();
   }
- 
-  return (
-    <div className="game-data">
-      <p className="game-user-id">User ID: {props.userid} </p>
-      <p className="game-moves-left">Moves left: <span>{props.movesleft}</span></p>
-      <p className="game-target-color">Target color: <span title={props.targetcolor} className="square" style={squareColor}></span></p>
-      <p className="game-closest-color">Closest color: <span title="0,0,0" className="square"></span><span className="delta">Δ = 12%</span></p>
-    </div>
-  );  
+  else{
+    alert('GAME IS OVER');
+  }
+  
 }
 
 const TabletrCircle = (props) => {
@@ -129,33 +155,60 @@ const Tablebody = (props) =>{
     </tbody>
   );
 }
+class GameData extends React.Component{
+  constructor(props) {
+    super(props);
+  }
+  getSquareColor() {
+    const targetColor = this.props.targetcolor; 
+    var targetArray = [0,0,0];
+    if(targetColor !== null){
+      targetArray = targetColor.split(",");
+    }
+    return {
+      backgroundColor: "rgb(" +targetArray[0]+ ","+targetArray[1]+","+targetArray[2]+")"
+    };
+    
+  }
+  render(){
+    return (
+      <div className="game-data">
+        <p className="game-user-id">User ID: {this.props.userid} </p>
+        <MoveLefts movesleft = {this.props.movesleft} />
+        <p className="game-target-color">Target color: <span title={this.props.targetcolor} className="square" style={this.getSquareColor()}></span></p>
+        <ClosestColor targetcolor={this.props.targetcolor} />
+      </div>
+    ); 
+  }
 
+}
 class Game extends React.Component {
   constructor(props) {
     super(props);
     this.state = { 
-      userid: null,
-      movesleft: null,
-      targetcolor: null,
-      width:10,
-      height:4
+      userid: '123',
+      moves: 12,
+      targetcolor: "0,0,0",
+      width : 5,
+      height: 6
     };
   }
   async componentDidMount(){
     const url = "http://localhost:9876/init";
     const res = await fetch(url);
     const data = await res.json();
-    this.setState({ userid: data.userId, movesleft: data.maxMoves, targetcolor: data.target.toString(),
-      width: data.width, height: data.height,});
+    globalTargetColor = data.target;
+    this.setState({ userid: data.userId, moves: data.maxMoves, targetcolor: data.target.toString(),width: data.width, height: data.height});
   }
   render() {
+    console.log("global target color: " + globalTargetColor);
     return (
       <div className="game-root">
         <div className="game-header">
         <h1 className="game-title">RGB Alchemy</h1>
         <GameData 
         userid={this.state.userid}
-        movesleft={this.state.movesleft}
+        movesleft={this.state.moves}
         targetcolor={this.state.targetcolor}
         />
         </div>
